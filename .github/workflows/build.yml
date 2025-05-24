@@ -4,9 +4,8 @@ jobs:
   build:
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
     with:
-      # ここにキーボードの .conf ファイル名 (拡張子なし) を記述
-      # 例: my_keyboard.conf なら my_keyboard
-      # 複数ある場合はスペース区切りで記述できます。
-      # (例: "shield_left shield_right")
-      shield: myboard # ここを .conf ファイル名に合わせて変更
-      # board: nice_nano_v2 # .conf ファイルで指定していれば不要な場合もある
+      # Use the 'include' input to specify your board and shield
+      # This is an array, so you can list multiple configurations if needed
+      config: |
+        - board: nice_nano_v2
+          shield: myboard
