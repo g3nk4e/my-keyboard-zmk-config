@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout ZMK Config
+      - name: Checkout config
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -18,17 +18,19 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: sudo apt update && sudo apt install -y cmake ninja-build gperf ccache dfu-util dtc wget python3-pip
-
-      - name: Initialize west and update
         run: |
-          pip install --upgrade west
+          sudo apt update
+          sudo apt install -y cmake ninja-build gperf ccache dfu-util dtc wget python3-pip
+
+      - name: Install west
+        run: pip install --upgrade west
+
+      - name: Init and update west
+        run: |
           west init -l config
           west update
-
-      - name: Export Zephyr CMake packages
-        run: west zephyr-export
+          west zephyr-export
 
       - name: Build firmware
         run: |
-          west build -s app -d build -b nice_nano_v2 -- -DSHIELD=myboard
+          west build -s app -b nice_nano_v2 -d build -- -DSHIELD=myboard
