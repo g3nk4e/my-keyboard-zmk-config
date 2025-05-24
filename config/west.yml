@@ -5,8 +5,7 @@ manifest:
   projects:
     - name: zmk
       remote: zmkfirmware
-      revision: main
-      path: firmware/zmk  # パスを変更して競合を回避
-      import: app/west.yml
+      revision: main  # 安定版を使う場合はタグ(例: v3.2)を指定
+      path: firmware/zmk
   self:
-    path: config  # マニフェストリポジトリのパス
+    path: config
