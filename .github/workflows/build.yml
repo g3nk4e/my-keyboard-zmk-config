@@ -1,40 +1,54 @@
-name: Build ZMK firmware
+name: Build ZMK Firmware
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          submodules: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.x'
 
-      - name: Install west
+      - name: Install dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y git cmake ninja-build gperf ccache dfu-util wget \
+              device-tree-compiler python3-pip python3-setuptools python3-wheel xz-utils file
           pip3 install --user west
-          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Initialize ZMK
+      - name: Configure ccache
         run: |
-          west init -l config
-          west update
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
+          ccache --zero-stats
 
-      - name: Build firmware (nice_nano_v2 + myboard)
+      - name: Initialize west and update
+        run: |
+          west init -l zmk
+          west update
+          west zephyr-export
+
+      - name: Build firmware
         run: |
           west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=myboard
+          ccache --show-stats
 
-      - name: Upload firmware artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware
-          path: build/zephyr/zmk.uf2
+          path: build/zephyr/zmk*.uf2
 
+      - name: Display build logs on failure
+        if: failure()
+        run: |
+          cat build/zephyr/build.log
