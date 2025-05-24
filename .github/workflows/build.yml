@@ -24,8 +24,7 @@ jobs:
           pip3 install -r zephyr/scripts/requirements.txt
 
       - name: Build firmware
-        run: |
-          west build -s app -b nice_nano_v2 -- -DSHIELD=myboard
+        run: west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=myboard
 
       - name: Upload UF2
         uses: actions/upload-artifact@v4
