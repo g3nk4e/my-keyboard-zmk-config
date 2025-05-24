@@ -4,8 +4,7 @@ jobs:
   build:
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
     with:
-      # Use the 'include' input to specify your board and shield
-      # This is an array, so you can list multiple configurations if needed
-      config: |
-        - board: nice_nano_v2
-          shield: myboard
+      # Specify your board and shield directly as strings
+      # These correspond to the values in your myboard.conf and your shield name
+      board: 'nice_nano_v2' # The board specified in CONFIG_BOARD in myboard.conf
+      shield: 'myboard'    # The name you want for your custom keyboard/shield
