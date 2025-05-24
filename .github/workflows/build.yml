@@ -32,10 +32,11 @@ jobs:
           ccache --zero-stats
 
       - name: Initialize west and update
-        run: |
-          west init -l zmk
-          west update
-          west zephyr-export
+    run: |
+    rm -rf .west  # 既存のキャッシュを削除
+    west init -l config  # マニフェストリポジトリのパスを明示
+    west update
+    west zephyr-export
 
       - name: Build firmware
         run: |
