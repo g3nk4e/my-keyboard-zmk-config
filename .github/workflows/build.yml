@@ -9,16 +9,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1. コードのチェックアウト（完全クリーンな状態で開始）
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           submodules: recursive
+          clean: true  # ワークスペースを完全クリーンに
 
+      # 2. キャッシュの強制削除（最初に必ず実行）
+      - name: Purge all caches
+        run: |
+          echo "=== キャッシュ強制削除開始 ==="
+          rm -rf .west
+          rm -rf zmk
+          rm -rf ~/.cache/west
+          rm -rf ~/.cache/ccache
+          echo "キャッシュ削除完了"
+
+      # 3. Python環境セットアップ
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      # 4. 依存関係のインストール
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -29,28 +43,53 @@ jobs:
           pip3 install --user west
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      # 5. ccache設定
+      - name: Configure ccache
+        run: |
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
+          ccache --zero-stats
+          ccache --max-size=1G
+
+      # 6. West初期化（マニフェストURL直接指定）
       - name: Initialize west
         run: |
-          rm -rf .west
           west init -m https://github.com/zmkfirmware/zmk --mr main
           west update
           west zephyr-export
 
-      - name: Build firmware
+      # 7. ビルド実行（失敗時は自動でキャッシュ削除）
+      - name: Build firmware with cache fallback
+        id: build
+        continue-on-error: true
         run: |
           cd zmk/app
           west build -b nice_nano_v2 -- -DSHIELD=myboard
           ccache --show-stats
 
+      # 8. ビルド失敗時のキャッシュ削除リトライ
+      - name: Retry after cache cleanup
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "=== ビルド失敗、キャッシュ削除して再試行 ==="
+          rm -rf .west zmk
+          west init -m https://github.com/zmkfirmware/zmk --mr main
+          west update
+          cd zmk/app
+          west build -b nice_nano_v2 -- -DSHIELD=myboard
+
+      # 9. 成果物のアップロード
       - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: firmware
           path: zmk/app/build/zephyr/zmk.uf2
           if-no-files-found: error
 
+      # 10. 失敗時のデバッグ情報出力
       - name: Debug on failure
         if: failure()
         run: |
+          echo "=== ビルド失敗時のデバッグ情報 ==="
           find . -name "build.log" -exec cat {} \;
           ls -R zmk/app
+          west --version
