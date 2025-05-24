@@ -1,9 +1,34 @@
-name: Build firmware
+name: Build ZMK firmware
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
-    with:
-      shield: myboard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+
+      - name: Init west and update
+        run: |
+          pip3 install --user west
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          west init -l config
+          west update
+          west zephyr-export
+          pip3 install -r zephyr/scripts/requirements.txt
+
+      - name: Build firmware
+        run: |
+          west build -s app -b nice_nano_v2 -- -DSHIELD=myboard
+
+      - name: Upload UF2
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware
+          path: build/zephyr/zmk.uf2
