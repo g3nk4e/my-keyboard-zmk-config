@@ -19,6 +19,7 @@ jobs:
         run: |
           rm -rf .west
           rm -rf zmk
+          rm -rf ~/.cache/west
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -35,15 +36,22 @@ jobs:
           pip3 install --user west
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Initialize west (ZMK config template)
+      - name: Initialize west (direct ZMK fork)
         run: |
-          west init -m https://github.com/zmkfirmware/zmk-config-template --mr main
+          west init -m https://github.com/zmkfirmware/zmk --mr main --manifest-rev main
           west update
           west zephyr-export
 
+      - name: Prepare custom shield
+        run: |
+          mkdir -p app/boards/shields/myboard
+          cp myboard.conf app/boards/shields/myboard/
+          cp myboard.overlay app/boards/shields/myboard/
+          cp myboard.keymap app/boards/shields/myboard/
+
       - name: Build firmware
         run: |
-          west build -s app -b nice_nano_v2 -- -DSHIELD=myboard
+          west build -b nice_nano_v2 -- -DSHIELD=myboard
           ccache --show-stats
 
       - name: Upload firmware artifact
@@ -57,4 +65,4 @@ jobs:
         if: failure()
         run: |
           find . -name "build.log" -exec cat {} \;
-          ls -R
+          ls -R app
