@@ -2,8 +2,6 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    # Try a specific release tag for stability, e.g., @2.7.0 (check ZMK docs for current stable)
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main # Or @v2.7.0 or similar
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
     with:
-      board: 'nice_nano_v2'
-      shield: 'myboard'
+      shield: myboard
