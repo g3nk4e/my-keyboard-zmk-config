@@ -5,4 +5,4 @@ jobs:
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
     with:
       # 必ず shield ディレクトリ名と合わせる（例: shields/myboard）
-      shield: "myboard"
+      shields/myboard: "myboard"
