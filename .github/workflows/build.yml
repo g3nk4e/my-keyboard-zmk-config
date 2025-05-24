@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           clean: true
@@ -18,8 +18,7 @@ jobs:
       - name: Clean workspace
         run: |
           rm -rf .west
-          rm -rf zmk
-          rm -rf ~/.cache/west
+          rm -rf firmware
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -36,25 +35,25 @@ jobs:
           pip3 install --user west
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Initialize west (direct ZMK fork)
+      - name: Configure ccache
         run: |
-          west init -m https://github.com/zmkfirmware/zmk --mr main --manifest-rev main
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
+          ccache --max-size=1G
+
+      - name: Initialize west
+        run: |
+          west init -l config
           west update
           west zephyr-export
 
-      - name: Prepare custom shield
-        run: |
-          mkdir -p app/boards/shields/myboard
-          cp myboard.conf app/boards/shields/myboard/
-          cp myboard.overlay app/boards/shields/myboard/
-          cp myboard.keymap app/boards/shields/myboard/
-
       - name: Build firmware
         run: |
-          west build -b nice_nano_v2 -- -DSHIELD=myboard
+          west build -s zmk/app -b nice_nano_v2 -- \
+            -DSHIELD=myboard \
+            -DZMK_CONFIG="$(pwd)/config"
           ccache --show-stats
 
-      - name: Upload firmware artifact
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: firmware
@@ -65,4 +64,5 @@ jobs:
         if: failure()
         run: |
           find . -name "build.log" -exec cat {} \;
-          ls -R app
+          west --version
+          ls -R config
