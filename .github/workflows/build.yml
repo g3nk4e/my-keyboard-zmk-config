@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout this repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Init west and update
         run: |
@@ -28,8 +28,8 @@ jobs:
           west build -s app -b nice_nano_v2 -- -DSHIELD=myboard
 
       - name: Upload UF2
-  uses: actions/upload-artifact@v4
-  with:
-    name: firmware
-    path: build/zephyr/zmk.uf2
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: build/zephyr/zmk.uf2
 
