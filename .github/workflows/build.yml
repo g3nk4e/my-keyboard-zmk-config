@@ -29,31 +29,28 @@ jobs:
           pip3 install --user west
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Configure ccache
-        run: |
-          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-          ccache --zero-stats
-
       - name: Initialize west
         run: |
-          rm -rf .west  # Clear previous cache
-          west init -l config  # Explicitly use manifest repo path
+          rm -rf .west
+          west init -m https://github.com/zmkfirmware/zmk --mr main
           west update
           west zephyr-export
 
       - name: Build firmware
         run: |
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=myboard
+          cd zmk/app
+          west build -b nice_nano_v2 -- -DSHIELD=myboard
           ccache --show-stats
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware
-          path: build/zephyr/zmk.uf2
+          path: zmk/app/build/zephyr/zmk.uf2
           if-no-files-found: error
 
-      - name: Display build logs on failure
+      - name: Debug on failure
         if: failure()
         run: |
           find . -name "build.log" -exec cat {} \;
+          ls -R zmk/app
